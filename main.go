@@ -65,11 +65,11 @@ func index(w http.ResponseWriter, r *http.Request) {
 	}
 	path := r.URL.Path[1:]
 	u, found := getURL(path)
-	if found {
+	if found && strings.HasPrefix(u, "http") {
 		http.Redirect(w, r, u, http.StatusFound)
 	}
-	var msg string
-	if path != "" {
+	msg := u
+	if path != "" && msg == "" {
 		msg = fmt.Sprintf("No match found for %q", path)
 	}
 	tmpl.Execute(w, msg)
@@ -79,7 +79,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 func post(w http.ResponseWriter, r *http.Request) {
 	u := strings.TrimSpace(r.FormValue("url"))
 	id := getID(u)
-	tmpl.Execute(w, rec{URL: u, ID: id})
+	tmpl.Execute(w, fmt.Sprintf("ID: %s", id))
 }
 
 func getID(u string) string {
@@ -112,7 +112,8 @@ func createID(u string) string {
 var formTemplate = `<!DOCTYPE html>
 <html>
     <body>
-    {{ . }}
+    <p>URL Shortener</p>
+    <p>{{ . }}</p>
         <form method="POST" action="/">
             <input type="text" name="url" id="url">
             <input type="submit" name="btnSubmit" id="btnSubmit" value="submit">
@@ -133,14 +134,17 @@ func toDisk() {
 		j, err := json.Marshal(db)
 		if err != nil {
 			log.Printf("Failed to marshal DB: %s", err)
-			continue
 			mu.RUnlock()
+			continue
 		}
 		err = ioutil.WriteFile(saveFile, j, 0644)
 		if err != nil {
 			log.Printf("Failed to write to storage: %s", err)
 		}
 		mu.RUnlock()
+		mu.Lock()
+		updated = false
+		mu.Unlock()
 	}
 }
 
