@@ -63,11 +63,17 @@ func index(w http.ResponseWriter, r *http.Request) {
 		post(w, r)
 		return
 	}
-	u, found := getURL(r.URL.Path[1:])
+	path := r.URL.Path[1:]
+	u, found := getURL(path)
 	if found {
 		http.Redirect(w, r, u, http.StatusFound)
 	}
-	tmpl.Execute(w, fmt.Sprintf("No match found for %q", r.URL.Path))
+	var msg string
+	if path != "" {
+		msg = fmt.Sprintf("No match found for %q", path)
+	}
+	tmpl.Execute(w, msg)
+
 }
 
 func post(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +92,7 @@ func getID(u string) string {
 	return createID(u)
 }
 
-func getURL(id string) (string , bool){
+func getURL(id string) (string, bool) {
 	mu.RLock()
 	u, found := db.IDToURL[id]
 	mu.RUnlock()
