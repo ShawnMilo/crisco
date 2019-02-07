@@ -55,15 +55,27 @@ type resp struct {
 func main() {
 	go toDisk()
 	http.HandleFunc("/", index)
+	http.HandleFunc("/favicon.ico", favicon)
 	log.Fatalf("Server failed: %s", http.ListenAndServe(":8001", nil))
 }
 
+func favicon(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "no content", http.StatusNoContent)
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = strings.Split(r.RemoteAddr, ":")[0]
+	}
 	if r.Method == http.MethodPost {
 		post(w, r)
 		return
 	}
 	path := r.URL.Path[1:]
+	if path != "" {
+		log.Printf("%s requested %q", ip, path)
+	}
 	u, found := getURL(path)
 	if found && strings.HasPrefix(u, "http") {
 		http.Redirect(w, r, u, http.StatusFound)
