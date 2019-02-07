@@ -47,9 +47,9 @@ func init() {
 	}
 }
 
-type rec struct {
-	URL string
-	ID  string
+type resp struct {
+	ID      string
+	Message string
 }
 
 func main() {
@@ -72,14 +72,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 	if path != "" && msg == "" {
 		msg = fmt.Sprintf("No match found for %q", path)
 	}
-	tmpl.Execute(w, msg)
+	tmpl.Execute(w, resp{Message: msg})
 
 }
 
 func post(w http.ResponseWriter, r *http.Request) {
 	u := strings.TrimSpace(r.FormValue("url"))
 	id := getID(u)
-	tmpl.Execute(w, fmt.Sprintf("ID: %s", id))
+	tmpl.Execute(w, resp{ID: id})
 }
 
 func getID(u string) string {
@@ -113,9 +113,11 @@ var formTemplate = `<!DOCTYPE html>
 <html>
     <body>
     <p>URL Shortener</p>
-    <p>{{ . }}</p>
+        {{ if .ID }}
+        <p>ID: {{ .ID }}</p>
+        {{ end }}
         <form method="POST" action="/">
-            <input type="text" name="url" id="url">
+            <textarea rows="5" cols="50" name="url" id="url">{{ .Message }}</textarea>"
             <input type="submit" name="btnSubmit" id="btnSubmit" value="submit">
         </form>
     </body>
