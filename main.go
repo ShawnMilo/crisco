@@ -18,6 +18,7 @@ var tmpl *template.Template
 type storage struct {
 	URLToID map[string]string
 	IDToURL map[string]string
+	LastID  int
 }
 
 var db storage
@@ -114,7 +115,8 @@ func getURL(id string) (string, bool) {
 func createID(u string) string {
 	mu.Lock()
 	defer mu.Unlock()
-	id := fmt.Sprintf("%#x", len(db.URLToID)+1)[2:]
+	db.LastID++
+	id := fmt.Sprintf("%#x", db.LastID)[2:]
 	db.URLToID[u] = id
 	db.IDToURL[id] = u
 	updated = true
@@ -177,4 +179,7 @@ func loadSave() {
 		return
 	}
 	db = data
+	if db.LastID == 0 {
+		db.LastID = len(db.URLToID)
+	}
 }
